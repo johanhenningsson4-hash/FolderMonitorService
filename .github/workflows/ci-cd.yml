@@ -28,6 +28,11 @@ jobs:
     - name: Build solution
       run: msbuild FolderMonitorService.sln /p:Configuration=Release
 
+    - name: Install Visual Studio Test Platform
+      run: |
+        nuget install Microsoft.TestPlatform -Version 16.10.0 -OutputDirectory .
+        $env:PATH += ";$(Get-Location)\Microsoft.TestPlatform.16.10.0\tools"
+
     - name: Run tests
       run: |
         if (Test-Path "TestResults") { Remove-Item -Recurse -Force "TestResults" }
