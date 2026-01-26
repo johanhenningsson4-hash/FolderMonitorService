@@ -8,6 +8,8 @@ The FolderMonitorService is a .NET Framework 4.7.2 application designed to monit
 - Logs file changes (create, modify, delete)
 - Configurable folder paths
 - Lightweight and efficient
+- **Base64 Password Encoding**: Encode passwords securely using Base64.
+- **App.config Integration**: Save encoded passwords directly to the App.config file.
 
 ## Setup Instructions
 1. Clone the repository:
@@ -24,4 +26,3 @@ Contributions are welcome! Feel free to submit issues or pull requests to improv
 
 ## License
 This project is licensed under the MIT License. See the LICENSE file for details
-"# FolderMonitorService" 
