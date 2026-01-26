@@ -30,7 +30,7 @@ jobs:
 
     - name: Run tests
       run: |
-        if exist "TestResults" rmdir /s /q "TestResults"
+        if (Test-Path "TestResults") { Remove-Item -Recurse -Force "TestResults" }
         vstest.console.exe **\*Tests.dll --logger:trx
       env:
         VSTEST_ADDITIONAL_ARGS: /Platform:x64
