@@ -45,5 +45,15 @@ jobs:
       with:
         languages: csharp
 
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: csharp
+
+    - name: Build for CodeQL analysis
+      run: |
+        nuget restore FolderMonitorService.sln
+        msbuild FolderMonitorService.sln /p:Configuration=Release
+
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v3
