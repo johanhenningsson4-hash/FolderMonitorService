@@ -47,23 +47,3 @@ jobs:
       uses: github/codeql-action/init@v3
       with:
         languages: csharp
-
-    - name: Build for CodeQL analysis
-      run: |
-        nuget restore FolderMonitorService.sln
-        msbuild FolderMonitorService.sln /p:Configuration=Release
-
-    - name: Clean CodeQL Database Directory
-      run: |
-        if (Test-Path "D:\a\_temp\codeql_databases") {
-          Remove-Item -Recurse -Force "D:\a\_temp\codeql_databases"
-        }
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-
-    - name: Clean CodeQL Database Directory
-      run: |
-        if [ -d "D:\a\_temp\codeql_databases" ]; then
-          rm -rf D:\a\_temp\codeql_databases
-        fi
