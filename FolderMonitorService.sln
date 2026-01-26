@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FolderMonitorService", "Fol
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FolderMonitorService.Tests", "FolderMonitorService.Tests\FolderMonitorService.Tests.csproj", "{8A2CAA9E-2E0D-42FE-4922-D8F8E842AA91}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EncodePassword", "EncodePassword\EncodePassword.csproj", "{2FBB6A06-6AD1-4EB1-BE29-852211CC0DF9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +43,18 @@ Global
 		{8A2CAA9E-2E0D-42FE-4922-D8F8E842AA91}.Release|x64.Build.0 = Release|Any CPU
 		{8A2CAA9E-2E0D-42FE-4922-D8F8E842AA91}.Release|x86.ActiveCfg = Release|Any CPU
 		{8A2CAA9E-2E0D-42FE-4922-D8F8E842AA91}.Release|x86.Build.0 = Release|Any CPU
+		{2FBB6A06-6AD1-4EB1-BE29-852211CC0DF9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2FBB6A06-6AD1-4EB1-BE29-852211CC0DF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2FBB6A06-6AD1-4EB1-BE29-852211CC0DF9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2FBB6A06-6AD1-4EB1-BE29-852211CC0DF9}.Debug|x64.Build.0 = Debug|Any CPU
+		{2FBB6A06-6AD1-4EB1-BE29-852211CC0DF9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2FBB6A06-6AD1-4EB1-BE29-852211CC0DF9}.Debug|x86.Build.0 = Debug|Any CPU
+		{2FBB6A06-6AD1-4EB1-BE29-852211CC0DF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2FBB6A06-6AD1-4EB1-BE29-852211CC0DF9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2FBB6A06-6AD1-4EB1-BE29-852211CC0DF9}.Release|x64.ActiveCfg = Release|Any CPU
+		{2FBB6A06-6AD1-4EB1-BE29-852211CC0DF9}.Release|x64.Build.0 = Release|Any CPU
+		{2FBB6A06-6AD1-4EB1-BE29-852211CC0DF9}.Release|x86.ActiveCfg = Release|Any CPU
+		{2FBB6A06-6AD1-4EB1-BE29-852211CC0DF9}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -65,6 +65,18 @@ namespace FolderMonitorService
             }
         }
 
+        private string DecodeBase64(string encodedValue)
+        {
+            var base64EncodedBytes = Convert.FromBase64String(encodedValue);
+            return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
+        }
+
+        private string EncodeBase64(string plainValue)
+        {
+            var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainValue);
+            return Convert.ToBase64String(plainTextBytes);
+        }
+
         private void SendAlertEmail()
         {
             try
@@ -76,7 +88,7 @@ namespace FolderMonitorService
                     Port = int.Parse(ConfigurationManager.AppSettings["SmtpPort"]),
                     Credentials = new NetworkCredential(
                         ConfigurationManager.AppSettings["SmtpUser"],
-                        ConfigurationManager.AppSettings["SmtpPassword"]
+                        DecodeBase64(ConfigurationManager.AppSettings["SmtpPassword"])
                     ),
                     EnableSsl = bool.Parse(ConfigurationManager.AppSettings["EnableSsl"]),
                 };
