@@ -34,3 +34,11 @@ jobs:
         vstest.console.exe **\*Tests.dll --logger:trx
       env:
         VSTEST_ADDITIONAL_ARGS: /Platform:x64
+
+    - name: Security scan
+      uses: github/codeql-action/init@v2
+      with:
+        languages: csharp
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
