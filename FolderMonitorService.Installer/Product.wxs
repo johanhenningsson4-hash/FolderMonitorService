@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  
+  <Product Id="*" 
+           Name="Folder Monitor Service" 
+           Language="1033" 
+           Version="1.0.0.0" 
+           Manufacturer="Your Company Name" 
+           UpgradeCode="87654321-4321-4321-4321-210987654321">
+    
+    <Package InstallerVersion="200" 
+             Compressed="yes" 
+             InstallScope="perMachine" 
+             Description="Folder Monitor Service Installer"
+             Comments="Installs and configures the Folder Monitor Windows Service" />
+
+    <!-- Major upgrade configuration -->
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    
+    <!-- Media and source -->
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Installation directory structure -->
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="FolderMonitorService" />
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="Folder Monitor Service"/>
+      </Directory>
+    </Directory>
+
+    <!-- Features -->
+    <Feature Id="ProductFeature" Title="Folder Monitor Service" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+      <ComponentRef Id="ProgramMenuDir" />
+    </Feature>
+
+    <!-- Service component group -->
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      
+      <!-- Main service executable -->
+      <Component Id="ServiceExecutable" Guid="11111111-1111-1111-1111-111111111111">
+        <File Id="ServiceExe" 
+              Source="$(var.FolderMonitorService.TargetPath)" 
+              KeyPath="yes" 
+              Checksum="yes" />
+        
+        <!-- Windows Service installation -->
+        <ServiceInstall Id="FolderMonitorService"
+                        Type="ownProcess"
+                        Name="FolderMonitorService"
+                        DisplayName="Folder Monitor Service"
+                        Description="Monitors specified folders for file system changes"
+                        Start="auto"
+                        Account="LocalSystem"
+                        ErrorControl="normal"
+                        Interactive="no" />
+        
+        <!-- Service control -->
+        <ServiceControl Id="StartService"
+                        Name="FolderMonitorService"
+                        Start="install"
+                        Stop="both"
+                        Remove="uninstall"
+                        Wait="yes" />
+      </Component>
+
+      <!-- Configuration files -->
+      <Component Id="ConfigFiles" Guid="22222222-2222-2222-2222-222222222222">
+        <File Id="AppConfig" 
+              Source="$(var.FolderMonitorService.TargetDir)FolderMonitorService.exe.config" 
+              Name="FolderMonitorService.exe.config" />
+      </Component>
+
+      <!-- Dependencies (if any) -->
+      <Component Id="Dependencies" Guid="33333333-3333-3333-3333-333333333333">
+        <!-- Add any additional DLL dependencies here -->
+      </Component>
+
+    </ComponentGroup>
+
+    <!-- Program menu shortcut -->
+    <Component Id="ProgramMenuDir" Directory="ApplicationProgramsFolder" Guid="44444444-4444-4444-4444-444444444444">
+      <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
+      <RegistryValue Root="HKCU" 
+                     Key="Software\[Manufacturer]\[ProductName]" 
+                     Name="installed" 
+                     Type="integer" 
+                     Value="1" 
+                     KeyPath="yes"/>
+    </Component>
+
+    <!-- Custom actions for service management -->
+    <CustomAction Id="StopServiceBeforeUninstall" 
+                  BinaryKey="WixCA" 
+                  DllEntry="WixQuietExec" 
+                  Execute="immediate" 
+                  Return="ignore" />
+
+    <!-- Installation sequence -->
+    <InstallExecuteSequence>
+      <Custom Action="StopServiceBeforeUninstall" Before="RemoveFiles">REMOVE="ALL"</Custom>
+    </InstallExecuteSequence>
+
+    <!-- UI configuration -->
+    <UIRef Id="WixUI_Minimal" />
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+
+  </Product>
+</Wix>

@@ -1,12 +1,15 @@
 name: CI/CD Pipeline
 
 permissions:
-  security-events: read
+  security-events: write
+  contents: write
 
 on:
   push:
     branches:
       - main
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - main
@@ -25,11 +28,43 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1
 
+    - name: Install WiX Toolset
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311.exe" -OutFile "wix311.exe"
+        Start-Process -FilePath "wix311.exe" -ArgumentList "/quiet" -Wait
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: csharp
+        queries: security-extended,security-and-quality
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.nuget/packages
+          packages/
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/packages.config', '**/*.sln') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Create version
+      id: version
+      run: |
+        if ('${{ github.ref }}' -like 'refs/tags/v*') {
+          $version = '${{ github.ref }}' -replace 'refs/tags/v', ''
+        } else {
+          $version = "1.0.${{ github.run_number }}"
+        }
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+        echo "Version: $version"
+
     - name: Restore NuGet packages
       run: nuget restore FolderMonitorService.sln
 
     - name: Build solution
-      run: msbuild FolderMonitorService.sln /p:Configuration=Release
+      run: msbuild FolderMonitorService.sln /p:Configuration=Release /p:Version=${{ steps.version.outputs.version }}
 
     - name: Install Visual Studio Test Platform
       run: |
@@ -39,11 +74,99 @@ jobs:
     - name: Run tests
       run: |
         if (Test-Path "TestResults") { Remove-Item -Recurse -Force "TestResults" }
-        dotnet test FolderMonitorService.Tests/FolderMonitorService.Tests.csproj --logger:trx
+        dotnet test FolderMonitorService.Tests/FolderMonitorService.Tests.csproj --logger:trx --results-directory TestResults
       env:
         VSTEST_ADDITIONAL_ARGS: /Platform:x64
 
-    - name: Security scan
-      uses: github/codeql-action/init@v3
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
       with:
-        languages: csharp
+        name: test-results-${{ github.run_number }}
+        path: TestResults/**/*.trx
+        retention-days: 30
+
+    - name: Publish test results
+      uses: EnricoMi/publish-unit-test-result-action/composite@v2
+      if: always()
+      with:
+        files: TestResults/**/*.trx
+        report_individual_runs: true
+        deduplicate_classes_by_file_name: false
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:csharp"
+
+    - name: Build MSI Installer
+      run: |
+        msbuild FolderMonitorService.Installer/FolderMonitorService.Installer.wixproj /p:Configuration=Release /p:Version=${{ steps.version.outputs.version }}
+
+    - name: Upload MSI Installer
+      uses: actions/upload-artifact@v4
+      with:
+        name: msi-installer-${{ steps.version.outputs.version }}
+        path: FolderMonitorService.Installer/bin/Release/*.msi
+        retention-days: 90
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts-${{ steps.version.outputs.version }}
+        path: |
+          **/bin/Release/**
+          !**/bin/Release/**/*.pdb
+          !**/bin/Release/**/obj/**
+        retention-days: 30
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - name: Download MSI artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: msi-installer-${{ needs.build.outputs.version }}
+          path: ./installer
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: FolderMonitorService ${{ github.ref }}
+          body: |
+            ## Windows Service Installer
+            
+            ### Installation Instructions
+            1. Download `FolderMonitorServiceInstaller.msi`
+            2. Run as Administrator
+            3. Follow the installation wizard
+            4. The service will start automatically after installation
+            
+            ### Features
+            - Automated Windows Service installation
+            - Configurable folder monitoring
+            - Base64 password encoding support
+            - Gmail SMTP integration ready
+            
+            ### System Requirements
+            - Windows 10/11 or Windows Server 2016+
+            - .NET Framework 4.7.2 or higher
+            - Administrator privileges for installation
+          draft: false
+          prerelease: false
+
+      - name: Upload MSI to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./installer/FolderMonitorServiceInstaller.msi
+          asset_name: FolderMonitorServiceInstaller.msi
+          asset_content_type: application/x-msi
