@@ -34,7 +34,7 @@ jobs:
         Start-Process -FilePath "wix311.exe" -ArgumentList "/quiet" -Wait
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v4
       with:
         languages: csharp
         queries: security-extended,security-and-quality
@@ -87,7 +87,7 @@ jobs:
         retention-days: 30
 
     - name: Publish test results
-      uses: EnricoMi/publish-unit-test-result-action/composite@v2
+      uses: EnricoMi/publish-unit-test-result-action@v2
       if: always()
       with:
         files: TestResults/**/*.trx
@@ -95,7 +95,7 @@ jobs:
         deduplicate_classes_by_file_name: false
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
+      uses: github/codeql-action/analyze@v4
       with:
         category: "/language:csharp"
 
