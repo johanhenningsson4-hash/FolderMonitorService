@@ -62,7 +62,7 @@ namespace FolderMonitorService.Tests
             // Assert
             Assert.IsTrue(message.Contains(filePath), "Message should contain file path");
             Assert.IsTrue(message.Contains(changeType), "Message should contain change type");
-            Assert.IsTrue(message.Contains(timestamp.ToString()), "Message should contain timestamp");
+            Assert.IsTrue(message.Contains(timestamp.ToString("yyyy-MM-dd HH:mm:ss")), "Message should contain formatted timestamp");
         }
 
         [TestMethod]
