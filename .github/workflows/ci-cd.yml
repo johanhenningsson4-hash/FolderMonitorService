@@ -28,6 +28,14 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1
 
+    - name: Start MailHog for Email Testing
+      run: |
+        # Download and start MailHog for email testing
+        Invoke-WebRequest -Uri "https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_windows_amd64.exe" -OutFile "mailhog.exe"
+        Start-Process -FilePath "mailhog.exe" -WindowStyle Hidden
+        Start-Sleep -Seconds 3
+        echo "MailHog started for email testing"
+
     - name: Install WiX Toolset
       run: |
         Invoke-WebRequest -Uri "https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311.exe" -OutFile "wix311.exe"

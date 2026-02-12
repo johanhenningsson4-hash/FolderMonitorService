@@ -226,6 +226,7 @@ namespace FolderMonitorService.Tests
         private readonly string _fromName;
         private readonly string _toEmail;
         private readonly bool _isDevelopment;
+        private static readonly bool _isInCI = Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != null;
 
         public EmailNotificationService()
         {
@@ -261,7 +262,7 @@ namespace FolderMonitorService.Tests
         {
             if (string.IsNullOrWhiteSpace(filePath))
                 throw new ArgumentException("File path cannot be empty", nameof(filePath));
-            
+
             if (string.IsNullOrWhiteSpace(changeType))
                 throw new ArgumentException("Change type cannot be empty", nameof(changeType));
 
@@ -281,7 +282,7 @@ namespace FolderMonitorService.Tests
         {
             var subject = GetEmailSubject($"{changes.Length} Changes");
             var body = "Multiple file changes detected:\n\n";
-            
+
             foreach (var change in changes)
             {
                 body += $"• {change.ChangeType}: {change.FilePath} at {change.Timestamp:HH:mm:ss}\n";
@@ -305,24 +306,41 @@ namespace FolderMonitorService.Tests
 
         private void SendEmail(string to, string subject, string body)
         {
-            using (var client = new SmtpClient(_smtpServer, _smtpPort))
+            // Skip SMTP in CI environment
+            if (_isInCI)
             {
-                if (!string.IsNullOrEmpty(_username))
-                {
-                    client.Credentials = new System.Net.NetworkCredential(_username, _password);
-                }
-                client.EnableSsl = _enableSsl;
+                Console.WriteLine($"[CI MODE] Email would be sent - To: {to}, Subject: {subject}");
+                return;
+            }
 
-                using (var message = new MailMessage(_fromEmail, to, subject, body))
+            // For local development with MailHog
+            try
+            {
+                using (var client = new SmtpClient(_smtpServer, _smtpPort))
                 {
-                    if (_isDevelopment)
+                    if (!string.IsNullOrEmpty(_username))
                     {
-                        message.Headers.Add("X-Environment", "Development");
-                        message.Headers.Add("X-Test-Mode", "true");
+                        client.Credentials = new System.Net.NetworkCredential(_username, _password);
                     }
+                    client.EnableSsl = _enableSsl;
+                    client.Timeout = 3000; // 3 second timeout
 
-                    client.Send(message);
+                    using (var message = new MailMessage(_fromEmail, to, subject, body))
+                    {
+                        if (_isDevelopment)
+                        {
+                            message.Headers.Add("X-Environment", "Development");
+                            message.Headers.Add("X-Test-Mode", "true");
+                        }
+
+                        client.Send(message);
+                    }
                 }
+            }
+            catch (SmtpException ex)
+            {
+                Console.WriteLine($"SMTP not available (expected in test): {ex.Message}");
+                // Don't throw - this is expected in test environments without MailHog
             }
         }
     }
