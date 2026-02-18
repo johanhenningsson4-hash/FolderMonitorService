@@ -24,6 +24,51 @@ namespace FolderMonitorService
         {
             InitializeComponent();
             logger = new Logger();
+
+            // Set up TraceListener to route all Trace calls through our Logger
+            SetupTraceLogging();
+        }
+
+        private void SetupTraceLogging()
+        {
+            try
+            {
+                // Check if trace integration is enabled
+                var enableTrace = System.Configuration.ConfigurationManager.AppSettings["EnableTraceIntegration"];
+                if (string.Equals(enableTrace, "false", StringComparison.OrdinalIgnoreCase))
+                {
+                    logger.LogInfo("Trace integration disabled via configuration");
+                    return;
+                }
+
+                // Remove default listeners to prevent duplicate output
+                Trace.Listeners.Clear();
+
+                // Add our custom TraceListener that routes to Logger
+                var traceListener = new LoggerTraceListener(logger, LogLevel.Info);
+                Trace.Listeners.Add(traceListener);
+
+                // Configure trace settings
+                Trace.AutoFlush = true;
+
+                logger.LogInfo($"TraceListener configured - all Trace calls will route through Logger with timestamps and 2MB rotation");
+                logger.LogInfo($"Log file: {logger.GetLogFilePath()}");
+                logger.LogInfo($"Current log size: {FormatFileSize(logger.GetCurrentLogFileSize())}");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError("Failed to setup trace logging", ex);
+            }
+        }
+
+        private string FormatFileSize(long bytes)
+        {
+            if (bytes < 1024)
+                return $"{bytes} bytes";
+            else if (bytes < 1024 * 1024)
+                return $"{bytes / 1024:F1} KB";
+            else
+                return $"{bytes / (1024 * 1024):F1} MB";
         }
 
         protected override void OnStart(string[] args)
@@ -71,13 +116,21 @@ namespace FolderMonitorService
                 logger.LogInfo("Check timer initialized (60 second interval)");
                 logger.LogInfo("=== FolderMonitorService started successfully ===");
 
-                // Also log to Windows Event Log for compatibility
-                Trace.TraceInformation("Service started successfully.");
+                // Demonstrate unified logging - both Logger and Trace calls now use the same system
+                logger.LogInfo("Direct Logger call: Service startup completed");
+                Trace.TraceInformation("Trace call: Service started successfully - routed through Logger");
+
+                // Log current configuration for debugging
+                logger.LogInfo($"Configuration summary:");
+                logger.LogInfo($"  - Monitor folder: {folderPath}");
+                logger.LogInfo($"  - Alert interval: {alertIntervalMinutes} minutes");
+                logger.LogInfo($"  - Monitor hours: {monitorStart:hh\\:mm} to {monitorEnd:hh\\:mm}");
+                logger.LogInfo($"  - Log file: {logger.GetLogFilePath()}");
+                logger.LogInfo($"  - Max log size: {FormatFileSize(2 * 1024 * 1024)} (with auto-rotation)");
             }
             catch (Exception ex)
             {
                 logger.LogCritical("Failed to start FolderMonitorService", ex);
-                Trace.TraceError($"Failed to start service: {ex.Message}");
                 throw;
             }
         }
@@ -86,6 +139,8 @@ namespace FolderMonitorService
         {
             logger.LogInfo($"File CREATED: {e.FullPath} (Size: {GetFileSize(e.FullPath)})");
             lastFileTime = DateTime.Now;
+
+            // Trace calls now automatically route through Logger
             Trace.TraceInformation($"File created: {e.FullPath}");
         }
 
@@ -225,11 +280,14 @@ Service Version: {System.Reflection.Assembly.GetExecutingAssembly().GetName().Ve
                 smtpClient.Send(mailMessage);
 
                 logger.LogInfo("Alert email sent successfully");
-                Trace.TraceInformation("Alert email sent successfully.");
+
+                // Trace integration - this will also go through Logger now
+                Trace.TraceInformation("Alert email sent successfully - via integrated trace logging");
             }
             catch (Exception ex)
             {
                 logger.LogError("Failed to send alert email", ex);
+                // Trace errors also route through Logger now
                 Trace.TraceError($"Failed to send alert email: {ex.Message}");
             }
         }
@@ -255,7 +313,9 @@ Service Version: {System.Reflection.Assembly.GetExecutingAssembly().GetName().Ve
                 }
 
                 logger.LogInfo("=== FolderMonitorService stopped successfully ===");
-                Trace.TraceInformation("Service stopped successfully.");
+
+                // Final trace message - will go through Logger
+                Trace.TraceInformation("Service stopped successfully - all logging unified");
             }
             catch (Exception ex)
             {
@@ -264,6 +324,13 @@ Service Version: {System.Reflection.Assembly.GetExecutingAssembly().GetName().Ve
             }
             finally
             {
+                // Clean up trace listeners before disposing logger
+                try
+                {
+                    Trace.Listeners.Clear();
+                }
+                catch { /* Ignore cleanup errors */ }
+
                 // Dispose logger last
                 logger?.Dispose();
             }

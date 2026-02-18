@@ -20,8 +20,8 @@ namespace FolderMonitorService
         private readonly object _lockObject = new object();
         private bool _disposed = false;
 
-        // Default constructor with 2 MB limit
-        public Logger() : this(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FolderMonitorService.log"), 2 * 1024 * 1024)
+        // Default constructor with configuration-based settings
+        public Logger() : this(GetConfiguredLogPath(), GetConfiguredMaxSize())
         {
         }
 
@@ -37,6 +37,30 @@ namespace FolderMonitorService
             {
                 Directory.CreateDirectory(logDirectory);
             }
+        }
+
+        private static string GetConfiguredLogPath()
+        {
+            var configPath = System.Configuration.ConfigurationManager.AppSettings["LogFilePath"];
+            if (!string.IsNullOrWhiteSpace(configPath))
+            {
+                return configPath;
+            }
+
+            // Default path in service directory
+            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FolderMonitorService.log");
+        }
+
+        private static long GetConfiguredMaxSize()
+        {
+            var maxSizeConfig = System.Configuration.ConfigurationManager.AppSettings["LogMaxSizeBytes"];
+            if (long.TryParse(maxSizeConfig, out var maxSize) && maxSize > 0)
+            {
+                return maxSize;
+            }
+
+            // Default 2 MB
+            return 2 * 1024 * 1024;
         }
 
         public void LogDebug(string message) => Log(LogLevel.Debug, message);

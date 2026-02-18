@@ -131,6 +131,7 @@
       <DependentUpon>FolderMonitorService.cs</DependentUpon>
     </Compile>
     <Compile Include="FolderMonitorService\Logger.cs" />
+    <Compile Include="FolderMonitorService\LoggerTraceListener.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="ProjectInstaller.cs">
       <SubType>Component</SubType>
